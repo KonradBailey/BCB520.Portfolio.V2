@@ -1,0 +1,164 @@
+---
+title: "Post With Code"
+author: "Konrad Bailey"
+date: "Spring 2024"
+categories: [news, code, analysis]
+image: "image.jpg"
+---
+
+## Development of Statistical Model:
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(MASS)
+```
+
+#### Importing Data:
+
+```{r}
+DougFir.data <- read.csv("~/Desktop/DougFir.data.csv", skip=1)
+```
+
+#### Printing Dataset:
+
+```{r}
+head(DougFir.data)
+```
+
+#### Dataset Type:
+
+These data are presented in the form of a table.
+
+#### Data Types:
+
+My independent variables are soil parent material (categorical) and mean annual radiation (continuous). The variables diameter breast height (continuous) and height (continuous) are used to derive my dependent variable, height diameter ratio (continuous).
+
+#### Generating Scatter Plot:
+
+Note: Requires data cleaning.
+
+```{r}
+DougFir.plot <-ggplot(DougFir.data, aes(x= MAR, y=HDR, color=SPM)) + geom_point(size=3) +
+  ggtitle('Effect of Soil Parent Material and Mean Annual Radiation 
+On Douglas Fir Height/Diameter Ratio')
+DougFir.plot + scale_color_brewer(palette="Dark2")
+```
+
+I don't like this plot. It's difficult to interpret the effect of mean annual radiation and the clustered nature of the data looks a tad weird.
+
+#### Generating Boxplot:
+
+```{r}
+DougFir.box <- ggplot(DougFir.data, aes(x = SPM, y = HDR, fill = SPM)) + 
+geom_boxplot(outlier.shape = NA) + 
+theme(legend.position="top") +
+  ggtitle('Effect of Soil Parent Material and Mean Annual Radiation 
+On Douglas Fir Height/Diameter Ratio')
+DougFir.box + scale_color_brewer(palette="Dark2")
+```
+
+## Task Abstraction:
+
+#### Action: Discover 
+
+#### Target: Identify trends and features of the data
+
+## Future Objectives:
+
+I want to create a visualization that demonstrates the difference in HDR based on SPM. However, using the raw to generate a boxplot doesn't control for my covariate, so at best it merely provides the reader a preliminary gist of what's going on. The effect of soil parent material after controlling for mean annual radiation can't be assessed until after performing the ANCOVA. I'm considering creating a boxplot based on the predicted values of my regression model, which control for mean annual radiation, and displaying it side-by-side with the boxplot based on the raw data.
+
+Develop a personalized template of aesthetic preferences for ggplot figures.
+
+## Continued Development of Statistical Model:
+
+#### Creating Linear Regression Model:
+
+Note: How does the creation of this linear model control for MAR? Because regression inherently controls for the effect of additional variables in the model when assessing the effect of a single variable, right?
+
+```{r}
+DougFir.ANCOVA <- lm(HDR ~ MAR + SPM, data = DougFir.data)
+```
+
+#### Performing ANOVA:
+
+Note: Should I label this ANCOVA?
+
+```{r}
+anova(DougFir.ANCOVA)
+```
+
+#### Generating Residual-by-Predicted Plot:
+
+```{r}
+plot(predict(DougFir.ANCOVA), rstandard(DougFir.ANCOVA),
+     main = 'Douglas Fir Residuals')
+abline(0,0)
+```
+
+The pattern in the residuals-by-predicted plot demonstrates a slight megaphone pattern, violating the assumption equal variance necessary for regression.
+
+#### Generating QQ Plot:
+
+```{r}
+DougFir.QQ <- rstandard(DougFir.ANCOVA)
+qqnorm(DougFir.QQ,
+       ylab = 'Height/Diameter Ratio',
+       xlab = 'Normal Scores',
+       main = 'Douglas Fir QQ',)
+qqline(DougFir.QQ)
+```
+
+The QQ plot shows that my data decently conforms to a normal distribution.
+
+#### Performing Box-Cox Analysis:
+
+```{r}
+boxcox(HDR ~ MAR + SPM, data = DougFir.data, lambda = seq(-1.25, 1.25, length = 10))
+```
+
+#### Performing Transformation on the Regression Model with Lambda set to 0.1:
+
+```{r}
+DougFir.ANCOVA.02 <- lm(HDR^0.1 ~ MAR + SPM, data = DougFir.data)
+```
+
+#### Generating Residual-by-Predicted Plot After Performing Transformation:
+
+```{r}
+plot(predict(DougFir.ANCOVA.02), rstandard(DougFir.ANCOVA.02),
+     main = 'Douglas Fir Residuals with Lambda = 0.1')
+abline(0,0)
+```
+
+The pattern in the residuals-by-predicted plot, after performing the transformation with lambda = 0.1, demonstrates a more equal distribution of the residual errors, making this model a better fit.
+
+#### Generating QQ Plot After Performing Transformation:
+
+```{r}
+DougFir.QQ.02 <- rstandard(DougFir.ANCOVA.02)
+qqnorm(DougFir.QQ.02,
+       ylab = 'Height/Diameter Ratio',
+       xlab = 'Normal Scores',
+       main = 'Douglas Fir QQ with Lambda = 0.1',)
+qqline(DougFir.QQ.02)
+```
+
+The QQ plot shows that my data conform to a normal distribution.
+
+#### Performing ANOVA on the Transformed Model:
+
+```{r}
+anova(DougFir.ANCOVA.02)
+```
+
+#### Performing a Tukey's Honestly Significant Difference Test:
+
+Note: The next step is to perform a post-hoc test to determine which soil parent materials demonstrated significant differences in their effect on HDR.
+
+
+
+
+
+
+

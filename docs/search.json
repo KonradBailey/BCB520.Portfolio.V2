@@ -1,0 +1,58 @@
+[
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this blog"
+  },
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "Welcome To My Blog",
+    "section": "",
+    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
+  },
+  {
+    "objectID": "posts/post-with-code/index.html",
+    "href": "posts/post-with-code/index.html",
+    "title": "Post With Code",
+    "section": "",
+    "text": "library(ggplot2)\nlibrary(tidyverse)\n\n── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──\n✔ dplyr     1.1.4     ✔ readr     2.1.5\n✔ forcats   1.0.0     ✔ stringr   1.5.1\n✔ lubridate 1.9.3     ✔ tibble    3.2.1\n✔ purrr     1.0.2     ✔ tidyr     1.3.0\n── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──\n✖ dplyr::filter() masks stats::filter()\n✖ dplyr::lag()    masks stats::lag()\nℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors\n\nlibrary(MASS)\n\n\nAttaching package: 'MASS'\n\nThe following object is masked from 'package:dplyr':\n\n    select\n\n\n\n\n\nDougFir.data &lt;- read.csv(\"~/Desktop/DougFir.data.csv\", skip=1)\n\n\n\n\n\nhead(DougFir.data)\n\n              SPM  MAR  DBH    HT       HDR\n1 Metasedimentary 12.3 35.5 28.24 0.7954930\n2       Intrusive 13.3 41.9 29.15 0.6957041\n3       Intrusive 13.3 49.4 30.89 0.6253036\n4       Intrusive 13.3 23.7 21.77 0.9185654\n5       Intrusive 13.3 44.9 30.77 0.6853007\n6       Intrusive 13.3 23.0  9.10 0.3956522\n\n\n\n\n\nThese data are presented in the form of a table.\n\n\n\nMy independent variables are soil parent material (categorical) and mean annual radiation (continuous). The variables diameter breast height (continuous) and height (continuous) are used to derive my dependent variable, height diameter ratio (continuous).\n\n\n\nNote: Requires data cleaning.\n\nDougFir.plot &lt;-ggplot(DougFir.data, aes(x= MAR, y=HDR, color=SPM)) + geom_point(size=3) +\n  ggtitle('Effect of Soil Parent Material and Mean Annual Radiation \nOn Douglas Fir Height/Diameter Ratio')\nDougFir.plot + scale_color_brewer(palette=\"Dark2\")\n\nWarning: Removed 1 rows containing missing values (`geom_point()`).\n\n\n\n\n\nI don’t like this plot. It’s difficult to interpret the effect of mean annual radiation and the clustered nature of the data looks a tad weird.\n\n\n\n\nDougFir.box &lt;- ggplot(DougFir.data, aes(x = SPM, y = HDR, fill = SPM)) + \ngeom_boxplot(outlier.shape = NA) + \ntheme(legend.position=\"top\") +\n  ggtitle('Effect of Soil Parent Material and Mean Annual Radiation \nOn Douglas Fir Height/Diameter Ratio')\nDougFir.box + scale_color_brewer(palette=\"Dark2\")\n\nWarning: Removed 1 rows containing non-finite values (`stat_boxplot()`)."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "BCB520.Portfolio.V2",
+    "section": "",
+    "text": "Konrad Bailey\n\n\n\n\n\n\n\n\n\n  \n\n\n\n\nWelcome To My Blog\n\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\n\n\nFeb 5, 2024\n\n\nTristan O’Malley\n\n\n\n\n\n\n  \n\n\n\n\nPost With Code\n\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\n\n\nJan 1, 2024\n\n\nKonrad Bailey\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/post-with-code/index.html#task-abstraction",
+    "href": "posts/post-with-code/index.html#task-abstraction",
+    "title": "Post With Code",
+    "section": "Task Abstraction:",
+    "text": "Task Abstraction:\n\nAction: Discover\n\n\nTarget: Identify trends and features of the data"
+  },
+  {
+    "objectID": "posts/post-with-code/index.html#development-of-statistical-model",
+    "href": "posts/post-with-code/index.html#development-of-statistical-model",
+    "title": "Post With Code",
+    "section": "",
+    "text": "library(ggplot2)\nlibrary(tidyverse)\n\n── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──\n✔ dplyr     1.1.4     ✔ readr     2.1.5\n✔ forcats   1.0.0     ✔ stringr   1.5.1\n✔ lubridate 1.9.3     ✔ tibble    3.2.1\n✔ purrr     1.0.2     ✔ tidyr     1.3.0\n── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──\n✖ dplyr::filter() masks stats::filter()\n✖ dplyr::lag()    masks stats::lag()\nℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors\n\nlibrary(MASS)\n\n\nAttaching package: 'MASS'\n\nThe following object is masked from 'package:dplyr':\n\n    select\n\n\n\n\n\nDougFir.data &lt;- read.csv(\"~/Desktop/DougFir.data.csv\", skip=1)\n\n\n\n\n\nhead(DougFir.data)\n\n              SPM  MAR  DBH    HT       HDR\n1 Metasedimentary 12.3 35.5 28.24 0.7954930\n2       Intrusive 13.3 41.9 29.15 0.6957041\n3       Intrusive 13.3 49.4 30.89 0.6253036\n4       Intrusive 13.3 23.7 21.77 0.9185654\n5       Intrusive 13.3 44.9 30.77 0.6853007\n6       Intrusive 13.3 23.0  9.10 0.3956522\n\n\n\n\n\nThese data are presented in the form of a table.\n\n\n\nMy independent variables are soil parent material (categorical) and mean annual radiation (continuous). The variables diameter breast height (continuous) and height (continuous) are used to derive my dependent variable, height diameter ratio (continuous).\n\n\n\nNote: Requires data cleaning.\n\nDougFir.plot &lt;-ggplot(DougFir.data, aes(x= MAR, y=HDR, color=SPM)) + geom_point(size=3) +\n  ggtitle('Effect of Soil Parent Material and Mean Annual Radiation \nOn Douglas Fir Height/Diameter Ratio')\nDougFir.plot + scale_color_brewer(palette=\"Dark2\")\n\nWarning: Removed 1 rows containing missing values (`geom_point()`).\n\n\n\n\n\nI don’t like this plot. It’s difficult to interpret the effect of mean annual radiation and the clustered nature of the data looks a tad weird.\n\n\n\n\nDougFir.box &lt;- ggplot(DougFir.data, aes(x = SPM, y = HDR, fill = SPM)) + \ngeom_boxplot(outlier.shape = NA) + \ntheme(legend.position=\"top\") +\n  ggtitle('Effect of Soil Parent Material and Mean Annual Radiation \nOn Douglas Fir Height/Diameter Ratio')\nDougFir.box + scale_color_brewer(palette=\"Dark2\")\n\nWarning: Removed 1 rows containing non-finite values (`stat_boxplot()`)."
+  },
+  {
+    "objectID": "posts/post-with-code/index.html#future-objectives",
+    "href": "posts/post-with-code/index.html#future-objectives",
+    "title": "Post With Code",
+    "section": "Future Objectives:",
+    "text": "Future Objectives:\nI want to create a visualization that demonstrates the difference in HDR based on SPM. However, using the raw to generate a boxplot doesn’t control for my covariate, so at best it merely provides the reader a preliminary gist of what’s going on. The effect of soil parent material after controlling for mean annual radiation can’t be assessed until after performing the ANCOVA. I’m considering creating a boxplot based on the predicted values of my regression model, which control for mean annual radiation, and displaying it side-by-side with the boxplot based on the raw data.\nDevelop a personalized template of aesthetic preferences for ggplot figures."
+  },
+  {
+    "objectID": "posts/post-with-code/index.html#continued-development-of-statistical-model",
+    "href": "posts/post-with-code/index.html#continued-development-of-statistical-model",
+    "title": "Post With Code",
+    "section": "Continued Development of Statistical Model:",
+    "text": "Continued Development of Statistical Model:\n\nCreating Linear Regression Model:\nNote: How does the creation of this linear model control for MAR? Because regression inherently controls for the effect of additional variables in the model when assessing the effect of a single variable, right?\n\nDougFir.ANCOVA &lt;- lm(HDR ~ MAR + SPM, data = DougFir.data)\n\n\n\nPerforming ANOVA:\nNote: Should I label this ANCOVA?\n\nanova(DougFir.ANCOVA)\n\nAnalysis of Variance Table\n\nResponse: HDR\n          Df  Sum Sq Mean Sq F value    Pr(&gt;F)    \nMAR        1 0.00809 0.00809  0.3423    0.5602    \nSPM        2 0.67668 0.33834 14.3116 5.075e-06 ***\nResiduals 78 1.84398 0.02364                      \n---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\n\n\n\nGenerating Residual-by-Predicted Plot:\n\nplot(predict(DougFir.ANCOVA), rstandard(DougFir.ANCOVA),\n     main = 'Douglas Fir Residuals')\nabline(0,0)\n\n\n\n\nThe pattern in the residuals-by-predicted plot demonstrates a slight megaphone pattern, violating the assumption equal variance necessary for regression.\n\n\nGenerating QQ Plot:\n\nDougFir.QQ &lt;- rstandard(DougFir.ANCOVA)\nqqnorm(DougFir.QQ,\n       ylab = 'Height/Diameter Ratio',\n       xlab = 'Normal Scores',\n       main = 'Douglas Fir QQ',)\nqqline(DougFir.QQ)\n\n\n\n\nThe QQ plot shows that my data decently conforms to a normal distribution.\n\n\nPerforming Box-Cox Analysis:\n\nboxcox(HDR ~ MAR + SPM, data = DougFir.data, lambda = seq(-1.25, 1.25, length = 10))\n\n\n\n\n\n\nPerforming Transformation on the Regression Model with Lambda set to 0.1:\n\nDougFir.ANCOVA.02 &lt;- lm(HDR^0.1 ~ MAR + SPM, data = DougFir.data)\n\n\n\nGenerating Residual-by-Predicted Plot After Performing Transformation:\n\nplot(predict(DougFir.ANCOVA.02), rstandard(DougFir.ANCOVA.02),\n     main = 'Douglas Fir Residuals with Lambda = 0.1')\nabline(0,0)\n\n\n\n\nThe pattern in the residuals-by-predicted plot, after performing the transformation with lambda = 0.1, demonstrates a more equal distribution of the residual errors, making this model a better fit.\n\n\nGenerating QQ Plot After Performing Transformation:\n\nDougFir.QQ.02 &lt;- rstandard(DougFir.ANCOVA.02)\nqqnorm(DougFir.QQ.02,\n       ylab = 'Height/Diameter Ratio',\n       xlab = 'Normal Scores',\n       main = 'Douglas Fir QQ with Lambda = 0.1',)\nqqline(DougFir.QQ.02)\n\n\n\n\nThe QQ plot shows that my data conform to a normal distribution.\n\n\nPerforming ANOVA on the Transformed Model:\n\nanova(DougFir.ANCOVA.02)\n\nAnalysis of Variance Table\n\nResponse: HDR^0.1\n          Df   Sum Sq   Mean Sq F value    Pr(&gt;F)    \nMAR        1 0.000122 0.0001223  0.2398    0.6257    \nSPM        2 0.014447 0.0072234 14.1647 5.652e-06 ***\nResiduals 78 0.039777 0.0005100                      \n---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\n\n\n\nPerforming a Tukey’s Honestly Significant Difference Test:\nNote: The next step is to perform a post-hoc test to determine which soil parent materials demonstrated significant differences in their effect on HDR."
+  }
+]
