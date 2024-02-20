@@ -1,10 +1,12 @@
 ---
-title: "Post With Code"
+title: 'BCB520: Assignment 03'
+subtitle: "Post With Code"
 author: "Konrad Bailey"
-date: "Spring 2024"
-categories: [news, code, analysis]
-image: "image.jpg"
+image: 'DougFir.V3.png'
+description: 'Analyzing the effect of soil parent material on the height/diameter ratio of Douglas fir trees after controlling for mean annual radiation.'
 ---
+
+#![](DougFir.png)
 
 ## Development of Statistical Model:
 
@@ -60,7 +62,7 @@ DougFir.box + scale_color_brewer(palette="Dark2")
 
 ## Task Abstraction:
 
-#### Action: Discover 
+#### Action: Discover
 
 #### Target: Identify trends and features of the data
 
@@ -155,10 +157,3 @@ anova(DougFir.ANCOVA.02)
 #### Performing a Tukey's Honestly Significant Difference Test:
 
 Note: The next step is to perform a post-hoc test to determine which soil parent materials demonstrated significant differences in their effect on HDR.
-
-
-
-
-
-
-

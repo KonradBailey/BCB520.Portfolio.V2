@@ -1,0 +1,12 @@
+---
+title: "Welcome To My Blog"
+author: 'Konrad Bailey'
+image: laptop.draw.png
+description: This is my first Quarto blog, designed to help me learn the ropes of GitHub.
+---
+
+Konrad Bailey is a graduate student at the University of Idaho studying statistics and geographic information systems.
+
+#### Education:
+
+BS Psychology with departmental honors | University of Oregon | 2017 - 2020
