@@ -1,0 +1,183 @@
+---
+title: "BCB520 A5 Redo"
+author: "Konrad Bailey"
+date: "2024-02-27"
+output:
+  pdf_document: default
+  html_document: default
+eval: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Loading necessary libraries:
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+```
+
+#### Loading the data:
+
+```{r}
+hockey.data <- read.csv("~/Desktop/NHLdraftstats.csv")
+```
+
+```{r}
+head(hockey.data)
+```
+
+# Part 1: Simple Scatterplot
+
+#### Filtering a subset of the data where draft year is equal to 2022:
+
+```{r}
+draft2022<-hockey.data%>%
+  filter(draftyear==2022 & postdraft==0)
+```
+
+#### Setting round as an ordered factor:
+
+```{r}
+hockey.data$round <- factor(hockey.data$round, 
+                        levels = sort(unique(hockey.data$round)), 
+                        ordered = TRUE)
+```
+
+```{r}
+head(hockey.data)
+```
+
+#### Grouping players from 2022 by round and NHLgames:
+
+```{r}
+draft2022 <- hockey.data %>%
+  filter(draftyear == 2022 & postdraft == 0) %>%
+  group_by(round, NHLgames) %>%
+  summarise(Count = n(), .groups = 'drop') # Count the number of players for each (round, NHLgames) pair
+```
+
+#### Generating Simple Scatterplot
+
+```{r}
+ggplot(draft2022, aes(x = round, y = NHLgames, size = Count)) +
+  geom_point(col = "#95C8D8", alpha = 0.7) +
+  scale_size_continuous(range = c(3, 10)) +
+  scale_y_continuous(limits = c(0, max(draft2022$NHLgames) * 1.1)) +
+  theme_minimal() +
+  labs(title = "Number of NHL Games Played as a Function of 2022 Draft Round",
+       x = "Draft Round",
+       y = "NHL Games Played",
+       size = "Number of Players",
+       caption = "Figure 1. Relationship between which round players were drafted\nand the number of games they played in. Key: Draft Round.\nValue: NHL Games Played. Marks: dots. Channels: position and size of dots.") +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0))
+```
+
+# Part 2: Expanded Scatterplot
+
+#### Filtering a subset of the data where draft year is equal to 2018:
+
+```{r}
+draft.tot.2018<-hockey.data%>%
+  filter(draftyear==2018 & postdraft<6) 
+```
+
+```{r}
+head(draft.tot.2018)
+```
+
+#### Grouping players by playerId, round, overall, position:
+
+```{r}
+draft.tot.2018<- draft2018%>%
+  group_by(playerId, round, overall, position, name)%>%
+  summarise(totgames=sum(NHLgames))
+```
+
+#### Regrouping data by round and totgames:
+
+```{r}
+draft.tot.2018 <- draft.tot.2018 %>%
+  group_by(round, totgames) %>%
+  summarise(count = n(), .groups = 'drop')
+```
+
+#### Generating Expanded Scatterplot:
+
+```{r}
+ggplot(draft.tot.2018, aes(x = round, y = totgames, size = count)) +
+  geom_jitter(alpha = 0.6, color = "#5B92E5", width = 0.2, height = 0) +  # Add jitter to the dots
+  scale_size_area(name = "Number of Players", max_size = 15, breaks = c(1, 5, 10, 20), labels = c("1", "5", "10", "20")) +
+  theme_minimal() +
+  labs(title = "Number of NHL Games Played as a Function of Draft Round",
+       x = "Draft Round",
+       y = "NHL Games Played")
+```
+
+# Part 3: SCATTERPLOT WITH OVERALL DRAFT POSITION
+
+#### Filtering a subset of the data where draft year is equal to 2018:
+
+```{r}
+overall.2018<-hockey.data%>%
+  filter(draftyear==2018 & postdraft<6) 
+```
+
+#### Grouping players by playerId, round, overall, position:
+
+```{r}
+overall.2018<- draft2018%>%
+  group_by(playerId, round, overall, position, name)%>%
+  summarise(totgames=sum(NHLgames))
+```
+
+#### Generating scatter plot with overall draft position:
+
+```{r}
+ggplot(overall.2018, aes(x = overall, y = totgames)) +
+  geom_point(color = "#191970", alpha = 0.6, size = 2) +
+  labs(
+    title = "2018 Draft Picks: Total NHL Games Played by Overall Draft Position",
+    x = "Overall Draft Position",
+    y = "Total NHL Games Played",
+    caption = "Figure 1. Relationship between overall draft position and the total number of games they played in.\nKey: Overall Position. Value: Total NHL Games Played. Marks: dots. Channels: position of dots."
+  ) +
+  theme_minimal()
+```
+
+It would be difficult to evaluate a player with an overall draft position of 31, given the high degree variance in total NHL games played by players who were picked within a range of overall draft positions from 25-35. This task is made especially difficult by the fact that so many players stack up at zero, with respect to total NHL games played.
+
+# Part 4: HIGHLIGHTING THE VALUE OF ELLIAS LINDHOLM
+
+```{r}
+filtered_data <- hockey.data %>%
+  filter(overall == 31 & NHLgames > 0)
+```
+
+```{r}
+frequency_distribution <- filtered_data %>%
+  count(points)
+```
+
+```{r}
+ggplot(frequency_distribution, aes(x = as.factor(points), y = n)) +
+  geom_col(fill = "#191970", alpha = 0.6) +
+  theme_minimal() +
+  labs(title = "Distribution Of Points Accumulated By Players From The 31st Overall Draft Position",
+       x = "Points",
+       y = "Frequency",
+       caption = "Frequency distribution of players with an overall draft position of 31. \nPlayers who never played a single NHL game were removed from \nthe data pool.") +
+  theme(plot.caption = element_text(hjust = 0)) # Adjusts caption alignment to the left
+
+```
+
+# Conclusion:
+
+Elais Lindholm's point stats far exceed even the highest scoring players from our data pool of overall 31st position draft picks. This appear to have been a great move by the Vancouver Canucks. As for the Calgary Flames, they were set to renew Lindholm's contract, which would have been expensive. Given that Lindholm has been in the NHL for a little over ten years and may be reaching the twilight of his career, and the fact that Calgary Flames they weren't in the running for the championship this year, they presumably made a reasonable decision by being willing to part with a star player to focus on utilizing their resources to build up a better team in the future. 
+
+
+

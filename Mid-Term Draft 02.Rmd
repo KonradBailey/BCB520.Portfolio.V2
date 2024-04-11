@@ -1,0 +1,240 @@
+---
+title: "Mid-Term Draft 02"
+author: "Konrad Bailey"
+date: "2024-03-20"
+output: pdf_document
+eval: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Load required libraries
+```{r}
+library(readxl)
+library(httr)
+library(jsonlite)
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+```
+
+```{r}
+USDA_UI.data <- read.csv("~/Desktop/USDAtoUI.csv")
+```
+
+```{r}
+head(USDA_UI.data)
+```
+
+
+```{r}
+DOEawards.data <- read.csv("~/Desktop/DOEawards.csv")
+```
+
+### Filter city by Moscow in DOE data
+```{r}
+DOE_UI.data <- DOEawards.data %>%
+  filter(City == 'Moscow')
+```
+
+```{r}
+head(DOE_UI.data)
+```
+
+### Fetch NSF data with API
+```{r} 
+#| eval: false
+
+
+library(readxl)
+
+
+# Base URL for the API
+base_url <- "https://www.research.gov/awardapi-service/v1/awards.json?awardeeName=%22regents+of+the+university+of+idaho%22"
+
+printFields <- "rpp,offset,id,agency,awardeeCity,awardeeCountryCode,awardeeDistrictCode,awardeeName,awardeeStateCode,awardeeZipCode,cfdaNumber,coPDPI,date,startDate,expDate,estimatedTotalAmt,fundsObligatedAmt,ueiNumber,fundProgramName,parentUeiNumber,pdPIName,perfCity,perfCountryCode,perfDistrictCode,perfLocation,perfStateCode,perfZipCode,poName,primaryProgram,transType,title,awardee,poPhone,poEmail,awardeeAddress,perfAddress,publicationResearch,publicationConference,fundAgencyCode,awardAgencyCode,projectOutComesReport,abstractText,piFirstName,piMiddeInitial,piLastName,piEmail"
+
+# Initialize an empty data frame to store results
+NSFtoUI <- tibble()
+
+# Number of results per page (as per API settings)
+results_per_page <- 25
+
+# Variable to keep track of the current page number
+current_page <- 1
+
+# Variable to control the loop
+keep_going <- TRUE
+
+while(keep_going) {
+    # Calculate the offset for the current page
+    offset <- (current_page - 1) * results_per_page + 1
+
+    # Construct the full URL with offset
+    url <- paste0(base_url, "&offset=", offset, "&printFields=", printFields)
+
+    # Make the API call
+    response <- GET(url)
+
+    # Check if the call was successful
+    if (status_code(response) == 200) {
+        # Extract and parse the JSON data
+        json_data <- content(response, type = "text", encoding = "UTF-8")
+        parsed_data <- fromJSON(json_data, flatten = TRUE)
+
+        # Extract the 'award' data and add to the all_awards data frame
+        awards_data <- parsed_data$response$award
+        NSFtoUI <- bind_rows(NSFtoUI, as_tibble(awards_data))
+
+        # Debug: Print the current page number and number of awards fetched
+        print(paste("Page:", current_page, "- Awards fetched:", length(awards_data$id)))
+
+        # Check if the current page has less than results_per_page awards, then it's the last page
+        if (length(awards_data$id) < results_per_page) {
+            keep_going <- FALSE
+        } else {
+            current_page <- current_page + 1
+        }
+    } else {
+        print(paste("Failed to fetch data: Status code", status_code(response)))
+        keep_going <- FALSE
+    }
+}
+```
+
+```{r}
+head(projects_df)
+```
+
+
+# Creating My New Dataset:
+
+```{r}
+# Prepare DOE_UI.data
+DOE_UI_prepared <- DOE_UI.data %>%
+  select(PI_Name = PI, 
+         Award_Amount = Amount.Awarded.to.Date, 
+         Start_Date = Start.Date, 
+         End_Date = End.Date) %>%
+  mutate(Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+         Start_Date = as.Date(Start_Date, format = "%Y-%m-%d"),
+         End_Date = as.Date(End_Date, format = "%Y-%m-%d"))
+
+# Prepare NSFtoUI
+NSFtoUI_prepared <- NSFtoUI %>%
+  select(PI_Name = pdPIName, 
+         Award_Amount = estimatedTotalAmt, 
+         Start_Date = startDate, 
+         End_Date = expDate) %>%
+  mutate(Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+         Start_Date = as.Date(Start_Date, format = "%Y-%m-%d"),
+         End_Date = as.Date(End_Date, format = "%Y-%m-%d"))
+
+# Prepare projects_df
+projects_df_prepared <- projects_df %>%
+  select(PI_Name = contact_pi_name, 
+         Award_Amount = award_amount, 
+         Start_Date = project_start_date, 
+         End_Date = project_end_date) %>%
+  mutate(Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+         Start_Date = as.Date(Start_Date, format = "%Y-%m-%d"),
+         End_Date = as.Date(End_Date, format = "%Y-%m-%d"))
+
+# Combine the prepared datasets
+UI_Grant_Data <- bind_rows(DOE_UI_prepared, NSFtoUI_prepared, projects_df_prepared)
+```
+
+```{r}
+head(UI_Grant_Data)
+```
+
+# Test:
+
+
+# Prepare DOE_UI.data with Funding_Agency
+DOE_UI_prepared <- DOE_UI.data %>%
+  select(PI_Name = PI, 
+         Award_Amount = Amount.Awarded.to.Date, 
+         Start_Date = Start.Date, 
+         End_Date = End.Date) %>%
+  mutate(Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+         Start_Date = as.Date(Start_Date, format = "%Y-%m-%d"),
+         End_Date = as.Date(End_Date, format = "%Y-%m-%d"),
+         Funding_Agency = "DOE")
+
+# Prepare NSFtoUI with Funding_Agency
+NSFtoUI_prepared <- NSFtoUI %>%
+  select(PI_Name = pdPIName, 
+         Award_Amount = estimatedTotalAmt, 
+         Start_Date = startDate, 
+         End_Date = expDate) %>%
+  mutate(Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+         Start_Date = as.Date(Start_Date, format = "%Y-%m-%d"),
+         End_Date = as.Date(End_Date, format = "%Y-%m-%d"),
+         Funding_Agency = "NSF")
+
+# Prepare projects_df with Funding_Agency
+projects_df_prepared <- projects_df %>%
+  select(PI_Name = contact_pi_name, 
+         Award_Amount = award_amount, 
+         Start_Date = project_start_date, 
+         End_Date = project_end_date) %>%
+  mutate(Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+         Start_Date = as.Date(Start_Date, format = "%Y-%m-%d"),
+         End_Date = as.Date(End_Date, format = "%Y-%m-%d"),
+         Funding_Agency = "NIH")
+
+# Combine the prepared datasets
+UI_Grant_Data <- bind_rows(DOE_UI_prepared, NSFtoUI_prepared, projects_df_prepared)
+
+
+
+```{r}
+#head(UI_Grant_Data)
+```
+
+```{r}
+# Prepare NSFtoUI with corrected date handling and Funding_Agency
+NSFtoUI_prepared <- NSFtoUI %>%
+  select(
+    PI_Name = pdPIName, 
+    Award_Amount = estimatedTotalAmt, 
+    Start_Date = startDate, 
+    End_Date = expDate
+  ) %>%
+  mutate(
+    Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+    Start_Date = as.Date(Start_Date, format = "%m/%d/%Y"),
+    End_Date = as.Date(End_Date, format = "%m/%d/%Y"),
+    Funding_Agency = "NSF"
+  )
+
+# Prepare projects_df with corrected date handling and Funding_Agency
+projects_df_prepared <- projects_df %>%
+  select(
+    PI_Name = contact_pi_name, 
+    Award_Amount = award_amount, 
+    Start_Date = project_start_date, 
+    End_Date = project_end_date
+  ) %>%
+  mutate(
+    Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+    Start_Date = as.Date(Start_Date, format = "%m/%d/%Y"),
+    End_Date = as.Date(End_Date, format = "%m/%d/%Y"),
+    Funding_Agency = "NIH"
+  )
+
+# Combine the prepared datasets into UI_Grant_Data
+UI_Grant_Data <- bind_rows(DOE_UI_prepared, NSFtoUI_prepared, projects_df_prepared)
+```
+
+```{r}
+head(UI_Grant_Data)
+```
+
+
+
+
+

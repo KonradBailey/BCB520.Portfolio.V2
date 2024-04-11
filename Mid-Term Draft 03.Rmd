@@ -1,0 +1,527 @@
+---
+title: "Mid-Term Draft 03"
+author: "Konrad Bailey"
+date: "2024-03-21"
+output: pdf_document
+eval: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Loading libraries
+```{r}
+library(readxl)
+library(httr)
+library(jsonlite)
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(ggplot2)
+library(ggalt)
+library(tibble)
+library(gridExtra)
+library(stringr)
+library(grid)
+library(scales)
+```
+
+
+## Department of Energy Data
+
+```{r}
+DOEawards.data <- read.csv("~/Desktop/DOEawards.csv")
+```
+
+#### Filtering city by Moscow in DOE data
+```{r}
+DOE_UI.data <- DOEawards.data %>%
+  filter(City == 'Moscow')
+```
+
+```{r}
+head(DOE_UI.data)
+```
+
+
+## National Science Foundation Data
+
+```{r}
+library(readxl)
+
+
+# Base URL for the API
+base_url <- "https://www.research.gov/awardapi-service/v1/awards.json?awardeeName=%22regents+of+the+university+of+idaho%22"
+
+printFields <- "rpp,offset,id,agency,awardeeCity,awardeeCountryCode,awardeeDistrictCode,awardeeName,awardeeStateCode,awardeeZipCode,cfdaNumber,coPDPI,date,startDate,expDate,estimatedTotalAmt,fundsObligatedAmt,ueiNumber,fundProgramName,parentUeiNumber,pdPIName,perfCity,perfCountryCode,perfDistrictCode,perfLocation,perfStateCode,perfZipCode,poName,primaryProgram,transType,title,awardee,poPhone,poEmail,awardeeAddress,perfAddress,publicationResearch,publicationConference,fundAgencyCode,awardAgencyCode,projectOutComesReport,abstractText,piFirstName,piMiddeInitial,piLastName,piEmail"
+
+# Initialize an empty data frame to store results
+NSFtoUI <- tibble()
+
+# Number of results per page (as per API settings)
+results_per_page <- 25
+
+# Variable to keep track of the current page number
+current_page <- 1
+
+# Variable to control the loop
+keep_going <- TRUE
+
+while(keep_going) {
+    # Calculate the offset for the current page
+    offset <- (current_page - 1) * results_per_page + 1
+
+    # Construct the full URL with offset
+    url <- paste0(base_url, "&offset=", offset, "&printFields=", printFields)
+
+    # Make the API call
+    response <- GET(url)
+
+    # Check if the call was successful
+    if (status_code(response) == 200) {
+        # Extract and parse the JSON data
+        json_data <- content(response, type = "text", encoding = "UTF-8")
+        parsed_data <- fromJSON(json_data, flatten = TRUE)
+
+        # Extract the 'award' data and add to the all_awards data frame
+        awards_data <- parsed_data$response$award
+        NSFtoUI <- bind_rows(NSFtoUI, as_tibble(awards_data))
+
+        # Debug: Print the current page number and number of awards fetched
+        print(paste("Page:", current_page, "- Awards fetched:", length(awards_data$id)))
+
+        # Check if the current page has less than results_per_page awards, then it's the last page
+        if (length(awards_data$id) < results_per_page) {
+            keep_going <- FALSE
+        } else {
+            current_page <- current_page + 1
+        }
+    } else {
+        print(paste("Failed to fetch data: Status code", status_code(response)))
+        keep_going <- FALSE
+    }
+}
+```
+
+```{r}
+head(NSFtoUI)
+```
+
+
+## National Institute of Health Data
+
+```{r}
+library(readxl)
+
+
+# Base URL for the API
+base_url <- "https://www.research.gov/awardapi-service/v1/awards.json?awardeeName=%22regents+of+the+university+of+idaho%22"
+
+printFields <- "rpp,offset,id,agency,awardeeCity,awardeeCountryCode,awardeeDistrictCode,awardeeName,awardeeStateCode,awardeeZipCode,cfdaNumber,coPDPI,date,startDate,expDate,estimatedTotalAmt,fundsObligatedAmt,ueiNumber,fundProgramName,parentUeiNumber,pdPIName,perfCity,perfCountryCode,perfDistrictCode,perfLocation,perfStateCode,perfZipCode,poName,primaryProgram,transType,title,awardee,poPhone,poEmail,awardeeAddress,perfAddress,publicationResearch,publicationConference,fundAgencyCode,awardAgencyCode,projectOutComesReport,abstractText,piFirstName,piMiddeInitial,piLastName,piEmail"
+
+# Initialize an empty data frame to store results
+NSFtoUI <- tibble()
+
+# Number of results per page (as per API settings)
+results_per_page <- 25
+
+# Variable to keep track of the current page number
+current_page <- 1
+
+# Variable to control the loop
+keep_going <- TRUE
+
+while(keep_going) {
+    # Calculate the offset for the current page
+    offset <- (current_page - 1) * results_per_page + 1
+
+    # Construct the full URL with offset
+    url <- paste0(base_url, "&offset=", offset, "&printFields=", printFields)
+
+    # Make the API call
+    response <- GET(url)
+
+    # Check if the call was successful
+    if (status_code(response) == 200) {
+        # Extract and parse the JSON data
+        json_data <- content(response, type = "text", encoding = "UTF-8")
+        parsed_data <- fromJSON(json_data, flatten = TRUE)
+
+        # Extract the 'award' data and add to the all_awards data frame
+        awards_data <- parsed_data$response$award
+        NSFtoUI <- bind_rows(NSFtoUI, as_tibble(awards_data))
+
+        # Debug: Print the current page number and number of awards fetched
+        print(paste("Page:", current_page, "- Awards fetched:", length(awards_data$id)))
+
+        # Check if the current page has less than results_per_page awards, then it's the last page
+        if (length(awards_data$id) < results_per_page) {
+            keep_going <- FALSE
+        } else {
+            current_page <- current_page + 1
+        }
+    } else {
+        print(paste("Failed to fetch data: Status code", status_code(response)))
+        keep_going <- FALSE
+    }
+}
+```
+
+```{r}
+print(projects_df)
+```
+
+## Generating UI_Grant_Data
+
+```{r}
+# Prepare DOE_UI.data with Funding_Agency
+DOE_UI_prepared <- DOE_UI.data %>%
+  select(
+    PI_Name = PI, 
+    Award_Amount = Amount.Awarded.to.Date, 
+    Start_Date = Start.Date, 
+    End_Date = End.Date
+  ) %>%
+  mutate(
+    Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+    Start_Date = mdy(Start_Date),
+    End_Date = mdy(End_Date),
+    Funding_Agency = "DOE"
+  )
+
+# Prepare NSFtoUI with Funding_Agency
+NSFtoUI_prepared <- NSFtoUI %>%
+  select(
+    PI_Name = pdPIName, 
+    Award_Amount = estimatedTotalAmt, 
+    Start_Date = startDate, 
+    End_Date = expDate
+  ) %>%
+  mutate(
+    Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+    Start_Date = mdy(Start_Date),
+    End_Date = mdy(End_Date),
+    Funding_Agency = "NSF"
+  )
+
+# Prepare projects_df with corrected date handling for ISO 8601 format and Funding_Agency
+projects_df_prepared <- projects_df %>%
+  select(
+    PI_Name = contact_pi_name, 
+    Award_Amount = award_amount, 
+    Start_Date = project_start_date, 
+    End_Date = project_end_date
+  ) %>%
+  mutate(
+    Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+    Start_Date = as.Date(ymd_hms(Start_Date)),
+    End_Date = as.Date(ymd_hms(End_Date)),
+    Funding_Agency = "NIH"
+  )
+
+# Combine the prepared datasets into UI_Grant_Data
+UI_Grant_Data <- bind_rows(DOE_UI_prepared, NSFtoUI_prepared, projects_df_prepared)
+```
+
+
+```{r}
+print(UI_Grant_Data)
+```
+
+
+
+```{r}
+
+# Prepare DOE_UI.data with Funding_Agency
+DOE_UI_prepared <- DOE_UI.data %>%
+  select(
+    PI_Name = PI, 
+    Award_Amount = Amount.Awarded.to.Date, 
+    Start_Date = Start.Date, 
+    End_Date = End.Date
+  ) %>%
+  mutate(
+    Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+    Start_Date = mdy(Start_Date),
+    End_Date = mdy(End_Date),
+    Funding_Agency = "DOE"
+  )
+
+# Prepare NSFtoUI with Funding_Agency
+NSFtoUI_prepared <- NSFtoUI %>%
+  select(
+    PI_Name = pdPIName, 
+    Award_Amount = estimatedTotalAmt, 
+    Start_Date = startDate, 
+    End_Date = expDate
+  ) %>%
+  mutate(
+    Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+    Start_Date = mdy(Start_Date),
+    End_Date = mdy(End_Date),
+    Funding_Agency = "NSF"
+  )
+
+# Prepare projects_df with corrected date handling for ISO 8601 format and Funding_Agency
+projects_df_prepared <- projects_df %>%
+  select(
+    PI_Name = contact_pi_name, 
+    Award_Amount = award_amount, 
+    Start_Date = project_start_date, 
+    End_Date = project_end_date
+  ) %>%
+  mutate(
+    Award_Amount = as.numeric(gsub("[^0-9.-]", "", Award_Amount)),
+    Start_Date = as.Date(ymd_hms(Start_Date)),
+    End_Date = as.Date(ymd_hms(End_Date)),
+    Funding_Agency = "NIH"
+  )
+
+# Combine the prepared datasets into UI_Grant_Data
+UI_Grant_Data <- bind_rows(DOE_UI_prepared, NSFtoUI_prepared, projects_df_prepared) %>%
+  # Filter out rows where Start_Date is before 01/01/2014
+  filter(Start_Date >= as.Date('2014-01-01'))
+
+```
+
+```{r}
+print(UI_Grant_Data)
+```
+
+
+```{r}
+
+# Filter the dataset for rows where Funding_Agency is "DOE"
+DOE_data <- UI_Grant_Data %>% 
+  filter(Funding_Agency == "DOE")
+
+# Generate the dumbbell plot with updated font sizes
+ggplot(DOE_data, aes(y = reorder(PI_Name, Start_Date), x = Start_Date, xend = End_Date)) +
+  geom_dumbbell(size=1, colour="#82cbb2", colour_x="#191970", colour_xend="#191970", dot_size=4) +
+  labs(title = "Timeline of Department of Energy Grants", # Title
+       x = "Date", # X-axis label
+       y = "Principal Investigator") + # Y-axis label
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle=45, hjust=1, size=8), # X-axis text size
+        axis.text.y = element_text(size=8), # Y-axis text size
+        axis.title.x = element_text(size=9.8), # X-axis label size
+        axis.title.y = element_text(size=9.8), # Y-axis label size
+        plot.title = element_text(face = "bold", size=12.5)) # Title font size and style
+
+```
+
+
+
+```{r}
+
+# Create the dumbbell plot for the first half with adjusted axis title sizes
+plot1 <- ggplot(NSF_data_part1, aes(y = reorder(PI_Name, Start_Date), x = Start_Date, xend = End_Date)) +
+  geom_dumbbell(size=0.5, colour="#82cbb2", colour_x="#191970", colour_xend="#191970") +
+  labs(x = "Date", y = "Principal Investigator") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, hjust=1, size=7),
+        axis.text.y = element_text(size=4.4),
+        axis.title.x = element_text(size=8.5), # Make x-axis title smaller and match y-axis title size
+        axis.title.y = element_text(size=8.5), # Adjust y-axis title size to be consistent
+        panel.grid = element_blank())
+
+# Create the dumbbell plot for the second half with adjusted axis title sizes
+plot2 <- ggplot(NSF_data_part2, aes(y = reorder(PI_Name, Start_Date), x = Start_Date, xend = End_Date)) +
+  geom_dumbbell(size=0.5, colour="#82cbb2", colour_x="#191970", colour_xend="#191970") +
+  labs(x = "Date", y = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, hjust=1, size=7),
+        axis.text.y = element_text(size=4.4),
+        axis.title.x = element_text(size=8.5), # Ensure x-axis title size is consistent across both plots
+        panel.grid = element_blank())
+
+# Arrange the plots side by side with a single title for the entire figure
+grid.arrange(plot1, plot2, ncol = 2, top = grid::textGrob("Timeline of National Science Foundation Grants", gp = grid::gpar(fontface = "bold", fontsize = 12.5)))
+
+```
+
+
+
+```{r}
+
+# Filter the dataset for rows where Funding_Agency is "NIH"
+NIH_data <- UI_Grant_Data %>% 
+  filter(Funding_Agency == "NIH")
+
+# Calculate the number of rows and find the midpoint
+n_rows <- nrow(NIH_data)
+midpoint <- floor(n_rows / 2)
+
+# Correctly split NIH data into two parts for plotting
+NIH_data_part1 <- NIH_data %>% slice(1:midpoint)
+NIH_data_part2 <- NIH_data %>% slice((midpoint + 1):n_rows)
+
+# Create the dumbbell plot for the first half with NIH data
+plot1 <- ggplot(NIH_data_part1, aes(y = reorder(PI_Name, Start_Date), x = Start_Date, xend = End_Date)) +
+  geom_dumbbell(size=0.5, colour="#82cbb2", colour_x="#191970", colour_xend="#191970") +
+  labs(x = "Date", y = "Principal Investigator") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, hjust=1, size=7),
+        axis.text.y = element_text(size=4.4),
+        axis.title.x = element_text(size=8.5),
+        axis.title.y = element_text(size=8.5),
+        panel.grid = element_blank())
+
+# Create the dumbbell plot for the second half with NIH data
+plot2 <- ggplot(NIH_data_part2, aes(y = reorder(PI_Name, Start_Date), x = Start_Date, xend = End_Date)) +
+  geom_dumbbell(size=0.5, colour="#82cbb2", colour_x="#191970", colour_xend="#191970") +
+  labs(x = "Date", y = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, hjust=1, size=7),
+        axis.text.y = element_text(size=4.4),
+        axis.title.x = element_text(size=8.5),
+        panel.grid = element_blank())
+
+# Arrange the plots side by side with a single title for the entire figure
+grid.arrange(plot1, plot2, ncol = 2, top = grid::textGrob("Timeline of National Institute of Health Grants", gp = grid::gpar(fontface = "bold", fontsize = 12.5)))
+
+```
+
+
+```{r}
+# Summarize the total Award_Amount for each Funding_Agency
+agency_totals <- UI_Grant_Data %>%
+  group_by(Funding_Agency) %>%
+  summarise(Total_Award_Amount = sum(Award_Amount, na.rm = TRUE)) %>%
+  arrange(desc(Total_Award_Amount)) # Optional: arrange by total amount for a more informative plot
+
+# Create a bar chart with dollar-formatted y-axis labels and custom colors
+ggplot(agency_totals, aes(x = Funding_Agency, y = Total_Award_Amount, fill = Funding_Agency)) +
+  geom_bar(stat = "identity", show.legend = FALSE) + # Use stat="identity" to use the values in the data frame
+  theme_minimal() +
+  labs(x = "Funding Agency", y = "Total Award Amount ($)", title = "Total Award Amount by Funding Agency") +
+  scale_y_continuous(labels = label_dollar()) + # Format y-axis labels as dollars
+  scale_fill_manual(values = c("#7982A9", "#B0C4DE", "#507072")) + # Custom colors for each funding agency
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Rotate x-axis labels for better readability
+
+
+```
+
+```{r}
+# Calculate the overall total Award_Amount
+overall_total <- sum(UI_Grant_Data$Award_Amount, na.rm = TRUE)
+
+# Summarize the percentage of Award_Amount for each Funding_Agency
+agency_percentages <- UI_Grant_Data %>%
+  group_by(Funding_Agency) %>%
+  summarise(Total_Award_Amount = sum(Award_Amount, na.rm = TRUE),
+            Percentage = Total_Award_Amount / overall_total * 100) %>%
+  arrange(desc(Percentage)) # Optional: arrange by percentage for a more informative plot
+
+# Create a pie chart to display the percentage contribution of each Funding_Agency
+ggplot(agency_percentages, aes(x = "", y = Percentage, fill = Funding_Agency)) +
+  geom_bar(width = 1, stat = "identity", show.legend = TRUE) + # Use geom_bar and set width to create a pie chart
+  coord_polar(theta = "y") + # Use polar coordinates to transform the bar chart into a pie chart
+  theme_void() + # Use theme_void to minimize chart junk
+  labs(title = "Percentage of Total Award Amount by Funding Agency", y = "Percentage") +
+  scale_fill_manual(values = c("#7982A9", "#B0C4DE", "#507072")) # Custom colors for each funding agency
+
+```
+
+
+```{r}
+'#82cbb2'  "#B0C4DE" '#191970' '#527D92' '#507072' '#6B9C9D' '#5F7A8B' "#7982A9"
+
+
+"#7982A9" '#82cbb2' '#5F7A8B' '#4F5B66' '#575D90'
+```
+
+
+```{r}
+# Filter the dataset for rows where Funding_Agency is "NIH"
+NIH_data <- UI_Grant_Data %>% 
+  filter(Funding_Agency == "NIH")
+
+# Create a scatter plot with Award_Amount on the x-axis and PI_Name on the y-axis
+scatter_plot <- ggplot(NIH_data, aes(x = Award_Amount, y = reorder(PI_Name, Award_Amount))) +
+  geom_point() +
+  labs(x = "Award Amount ($)", y = "Principal Investigator") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.ticks.x = element_line(),
+    axis.text.y = element_text(size = 7),
+    panel.grid.major.y = element_blank(),
+    plot.margin = margin(t = 30, r = 30, b = 50, l = 50)
+  ) +
+  scale_x_continuous(position = "top") # Move the x-axis to the top
+
+# Print the plot
+print(scatter_plot)
+
+```
+
+```{r}
+
+# Calculate the number of rows and find segment points
+n_rows <- nrow(NIH_data)
+thirdpoint <- floor(n_rows / 3)
+two_thirdpoint <- floor(2 * n_rows / 3)
+
+# Correctly split NIH data into three parts for plotting
+NIH_data_part1 <- NIH_data %>% slice(1:thirdpoint)
+NIH_data_part2 <- NIH_data %>% slice((thirdpoint + 1):two_thirdpoint)
+NIH_data_part3 <- NIH_data %>% slice((two_thirdpoint + 1):n_rows)
+
+# Create scatter plot for the first part of the data
+scatter_plot1 <- ggplot(NIH_data_part1, aes(x = Award_Amount, y = reorder(PI_Name, Award_Amount))) +
+  geom_point() +
+  labs(x = "Award Amount ($)", y = "Principal Investigator") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1),
+    axis.text.y = element_text(size = 7),
+    panel.grid.major.y = element_blank()
+  )
+
+# Create scatter plot for the second part of the data
+scatter_plot2 <- ggplot(NIH_data_part2, aes(x = Award_Amount, y = reorder(PI_Name, Award_Amount))) +
+  geom_point() +
+  labs(x = "Award Amount ($)", y = "") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1),
+    axis.text.y = element_blank(),
+    panel.grid.major.y = element_blank()
+  )
+
+# Create scatter plot for the third part of the data
+scatter_plot3 <- ggplot(NIH_data_part3, aes(x = Award_Amount, y = reorder(PI_Name, Award_Amount))) +
+  geom_point() +
+  labs(x = "Award Amount ($)", y = "") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1),
+    axis.text.y = element_blank(),
+    panel.grid.major.y = element_blank()
+  )
+
+# Arrange the three plots side by side with a single title for the entire figure
+grid.arrange(scatter_plot1, scatter_plot2, scatter_plot3, ncol = 3, top = "Timeline of National Institute of Health Grants")
+
+```
+
+## Note:
+
+Some PI's received multiple grants, so in certain instances there's overlapping data on single rows. I need a solution to this problem (perhaps multiple rows for PI's received multiple grants).
+
+```{r}
+
+
+
+```
+
+
+```{r}
+head(UI_Grant_Data)
+```
+

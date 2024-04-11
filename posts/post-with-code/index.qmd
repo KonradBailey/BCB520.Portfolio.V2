@@ -2,7 +2,7 @@
 title: 'BCB520: Assignment 03'
 subtitle: "Post With Code"
 author: "Konrad Bailey"
-image: 'DougFir.V3.png'
+image: 'DougFir.V2.png'
 description: 'Analyzing the effect of soil parent material on the height/diameter ratio of Douglas fir trees after controlling for mean annual radiation.'
 ---
 

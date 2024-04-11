@@ -4,7 +4,7 @@ subtitle: 'Marks and Channels'
 author: 'Konrad Bailey'
 #date: 'Spring 2024'
 #categories: [Assignment, Dataviz]
-image: DougFir.V2.png
+image: Gopher.png
 code-fold: true
 code-tools: true
 description: Experimenting with marks and channels to demonstrate good and bad practices in data-visualizaton.

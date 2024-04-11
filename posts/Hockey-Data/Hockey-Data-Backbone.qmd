@@ -1,0 +1,480 @@
+---
+title: "ASSIGNMENT 05"
+subtitle: "Visualizations for Tabular Data"
+author: "Konrad Bailey"
+date: "2024-02-25"
+categories: [Assignment, DataViz, Tables, Scatterplot, Barplot, Piechart]
+code-fold: true
+code-tools: true
+code-link: true
+description: "Should I trade these draft picks for this bag of magic beans...?"
+eval: false
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+```
+
+```{r}
+hockey.data <- read.csv("~/Desktop/NHLdraftstats.csv")
+```
+
+```{r}
+hockey.data$round <- factor(hockey.data$round, 
+                        levels = sort(unique(hockey.data$round)), 
+                        ordered = TRUE)
+```
+
+```{r}
+head(hockey.data)
+```
+
+# Simple Scatterplot
+
+```{r}
+#| eval: false
+
+
+ggplot(draft2022, aes(x = round, y = NHLgames, size = Count)) +
+  geom_point(col = "#4A7D81", alpha = 0.6) +
+  scale_size_continuous(range = c(3, 10)) +
+  scale_y_continuous(limits = c(0, max(draft2022$NHLgames) * 1.1)) +
+  theme_minimal() +
+  labs(title = "Number of NHL Games Played as a Function of Draft Round",
+       x = "Draft Round",
+       y = "NHL Games Played",
+       size = "Number of Players",
+       caption = "Figure 1. Relationship between which round players were drafted\nand the number of games they played in. Key: Draft Round.\nValue: NHL Games Played. Marks: dots. Channels: position and size of dots.") +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0))
+```
+
+# Expanded Scatterplot
+
+
+```{r}
+draft.2018<-hockey.data%>%
+  filter(draftyear==2018 & postdraft<6) 
+
+draft.tot.2018<- draft.2018%>%
+  group_by(playerId, round, overall, position, name)%>%
+  summarise(totgames=sum(NHLgames))
+```
+
+
+
+
+```{r}
+ggplot(draft.tot.2018, aes(x = round, y = totgames, size = count)) +
+  geom_jitter(alpha = 0.6, color = "#4A7D81", width = 0.2, height = 0) +  # Add jitter to the dots
+  scale_size_area(name = "Number of Players", max_size = 15, breaks = c(1, 5, 10, 20), labels = c("1", "5", "10", "20")) +
+  theme_minimal() +
+  labs(title = "Total Number of NHL Games Played as a Function of Draft Round",
+       x = "Draft Round",
+       y = "Total NHL Games Played",
+       caption = "Figure 1. Relationship between which round players were drafted\nand the total number of games they played in. Key: Draft Round.\nValue: Total NHL Games Played. Marks: dots. Channels: position \nand size of dots.") +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(hjust = 0))
+```
+
+# SCATTERPLOT WITH OVERALL DRAFT POSITION
+
+Midnight Blue: #191970
+
+```{r}
+hockey.total <- hockey.data%>%
+  group_by(playerId, round, overall, position, name)%>%
+  summarise(totgames=sum(NHLgames))
+```
+
+```{r}
+ggplot(hockey.total, aes(x=overall, y=totgames))+
+  geom_point()
+```
+
+```{r}
+hockey.total$overall_color <- factor(ifelse(hockey.total$overall == 1, "#191970",
+                                      ifelse(hockey.total$overall == 2, "#5B92E5",
+                                      ifelse(hockey.total$overall == 3, "#95C8D8",
+                                             "#C4C3D0"))))
+
+ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(title = "Total NHL Games Played by Draft Pick",
+       x = "Overall Draft Pick",
+       y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "right")
+```
+
+```{r}
+hockey.total$size <- ifelse(hockey.total$overall %in% c(1, 2, 3), 2.5, 1.5)  # Increase size for 1, 2, 3
+
+# Update the ggplot code to reflect the new size adjustments
+ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(aes(size = I(size)), alpha = 0.6) +  # Use I(size) to apply the size directly
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(title = "Total NHL Games Played by Draft Pick",
+       x = "Overall Draft Pick",
+       y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1)),
+         size = FALSE) +  # Hide the size legend
+  theme(legend.position = "right")
+```
+
+```{r}
+hockey.total$size <- ifelse(hockey.total$overall %in% c(1, 2, 3), 2.5, 1)  # Increase size for 1, 2, 3; decrease for others
+
+# Update the ggplot code to include the adjusted size aesthetic
+# and limit the x-axis to show only overall scores less than 12
+ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color, size = I(size))) +
+  geom_point(alpha = 0.6) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(title = "Total NHL Games Played by Draft Pick",
+       x = "Overall Draft Pick",
+       y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1)),
+         size = FALSE) +  # Hide the size legend since it's manually set
+  theme(legend.position = "right") +
+  coord_cartesian(xlim = c(NA, 11)) # Limit the x-axis to overall scores less than 12
+```
+
+```{r}
+ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +  # Jitter dots with specified size
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(title = "Total NHL Games Played by Draft Pick",
+       x = "Overall Draft Pick",
+       y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "right") +
+  coord_cartesian(xlim = c(NA, 6)) # Limit the x-axis to show only overall scores less than 7
+```
+
+```{r}
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6, size = 2.5) +  # Fixed size for all dots
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "right")
+
+# Second plot (with jitter)
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +  # Jittered dots
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, 6)) # Limit x-axis
+
+combined_plot <- (plot1 | plot2) + 
+  plot_annotation(title = "Total NHL Games Played by Draft Pick", 
+                  theme = theme(plot.title = element_text(hjust = 0.5))) +
+  plot_layout(guides = 'collect')
+
+# Move the shared legend to the bottom
+combined_plot <- combined_plot & theme(legend.position = "bottom")
+
+# Display the combined plot
+combined_plot
+```
+
+```{r}
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6, size = 2.5) +  # Specific size for all dots
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(x = "Overall Draft Pick", y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "none")  # Hide legend here, will be shown on combined plot
+
+# Second plot with jittered dots and specific sizes as per your updated requirements
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +  # Use jitter with specified size
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, 6)) +  # Limit x-axis as per your requirement
+  labs(x = "Overall Draft Pick", y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "none")  # Hide legend here as well
+
+# Combine the plots side by side with a shared title and a single legend at the bottom
+combined_plot <- plot1 + plot2 + 
+  plot_layout(guides = 'collect') +
+  plot_annotation(title = "Total NHL Games Played by Draft Pick", theme = theme(plot.title = element_text(hjust = 0.5)))
+
+# Adjust the legend position to the bottom for the combined plot
+combined_plot <- combined_plot & theme(legend.position = "bottom")
+
+# Display the combined plot
+combined_plot
+```
+
+```{r}
+# Define the first plot
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(title = "Total NHL Games Played by Draft Pick",
+       x = "Overall Draft Pick",
+       y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "right")
+
+# Define the second plot
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +  # Jitter dots with specified size
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(title = "Total NHL Games Played by Draft Pick",
+       x = "Overall Draft Pick",
+       y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "right") +
+  coord_cartesian(xlim = c(NA, 6)) # Limit the x-axis to show only overall scores less than 7
+
+# Combine the plots side-by-side without altering titles or legends
+combined_plot <- plot1 + plot2
+
+# Display the combined plot
+combined_plot
+```
+
+
+
+
+```{r}
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6, size = 1.5) +  # Reduced specific size for all dots to 1.5
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(x = "Overall Draft Pick", y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "none")  # Hide legend here, will be shown on combined plot
+
+# Second plot remains unchanged
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +  # Use jitter with specified size
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, 6)) +  # Limit x-axis as per your requirement
+  labs(x = "Overall Draft Pick", y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "none")  # Hide legend here as well
+
+# Combine the plots side by side with a shared title and a single legend at the bottom
+combined_plot <- plot1 + plot2 + 
+  plot_layout(guides = 'collect') +
+  plot_annotation(title = "Total NHL Games Played as a Function Draft Pick", theme = theme(plot.title = element_text(hjust = 0.5)))
+
+# Adjust the legend position to the bottom for the combined plot
+combined_plot <- combined_plot & theme(legend.position = "bottom")
+
+# Display the combined plot
+combined_plot
+```
+
+
+
+```{r}
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6, size = 1.5) +  # Adjusted size for smaller dots
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(x = "Overall Draft Pick", y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "none", 
+        axis.title.x = element_text(size = 10),  # Smaller font size for x-axis label
+        axis.title.y = element_text(size = 10))  # Smaller font size for y-axis label
+
+# Define the second plot without the y-axis label and with jittered dots
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, 6)) +
+  labs(x = "Overall Draft Pick", y = NULL) +  # Removed y-axis label
+  guides(color = guide_legend(title = "Overall Score Color", override.aes = list(alpha = 1))) +
+  theme(legend.position = "none", 
+        axis.title.x = element_text(size = 10))  # Smaller font size for x-axis label, y-axis label is not shown
+
+# Combine the plots side by side with a shared title and a single legend at the bottom
+combined_plot <- plot1 + plot2 + 
+  plot_layout(guides = 'collect') +
+  plot_annotation(title = "Total NHL Games Played as a Function Draft Pick", 
+                  theme = theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold")))
+
+# Adjust the legend position to the bottom for the combined plot
+combined_plot <- combined_plot & theme(legend.position = "bottom")
+
+# Display the combined plot
+combined_plot
+```
+
+```{r}
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6, size = 1.2) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0"),
+                     labels = c("Draft Pick 1", "Draft Pick 2", "Draft Pick 3", "Draft Pick > 3"),
+                     breaks = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(x = "Overall Draft Pick", y = "Total NHL Games Played") +
+  guides(color = guide_legend(title = "Draft Pick Value", override.aes = list(alpha = 1))) +
+  theme(legend.position = "none")
+
+# Define the second plot with customized legend labels and without the y-axis label
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0"),
+                     labels = c("Draft Pick 1", "Draft Pick 2", "Draft Pick 3", "Draft Pick > 3"),
+                     breaks = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, 6)) +
+  labs(x = "Overall Draft Pick", y = NULL) +
+  guides(color = guide_legend(title = "Draft Pick Value", override.aes = list(alpha = 1))) +
+  theme(legend.position = "none")
+
+# Combine the plots side by side with the legend placed at the bottom
+combined_plot <- plot1 + plot2 + 
+  plot_layout(guides = 'collect') +
+  plot_annotation(title = "Total NHL Games Played as a Function Draft Pick", 
+                  theme = theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold", margin = margin(b = 10))))
+
+# Adjust the legend position to the bottom for the combined plot
+combined_plot <- combined_plot & theme(legend.position = "bottom")
+
+# Display the combined plot
+combined_plot
+```
+
+```{r}
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6, size = 1.5) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(x = "Overall Draft Pick", y = "Total NHL Games Played") +
+  theme(legend.position = "none")
+
+# Define plot2 with a legend and specify the size of the dots in the legend.
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0"),
+                     labels = c("Draft Pick 1", "Draft Pick 2", "Draft Pick 3", "Draft Pick > 3")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, 6)) +
+  labs(x = "Overall Draft Pick", y = NULL) +
+  guides(color = guide_legend(title = "Overall Draft Pick",
+                              override.aes = list(size = 2.5)))  # Set the size of dots in the legend
+
+# Combine the plots side by side, ensuring only plot2's legend is used.
+combined_plot <- plot1 + plot2
+
+# Display the combined plot
+combined_plot
+```
+
+```{r}
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6, size = 1.2) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0"),
+                     labels = c("Draft Pick 1", "Draft Pick 2", "Draft Pick 3", "Draft Pick > 3"),
+                     breaks = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(x = "Overall Draft Pick", y = "Total NHL Games Played") #+
+  #guides(color = guide_legend(title = "Draft Pick Value", override.aes = list(alpha = 1))) +
+  #theme(legend.position = "none")
+
+# Define the second plot with customized legend labels and without the y-axis label
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0"),
+                     labels = c("Draft Pick 1", "Draft Pick 2", "Draft Pick 3", "Draft Pick > 3"),
+                     breaks = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, 6)) +
+  labs(x = "Overall Draft Pick", y = NULL) +
+  guides(color = guide_legend(title = "Draft Pick Value", override.aes = list(alpha = 1))) +
+  theme(legend.position = "none")
+
+# Combine the plots side by side with the legend placed at the bottom
+combined_plot <- plot1 + plot2 + 
+  plot_layout(guides = 'collect') +
+  plot_annotation(title = "Total NHL Games Played as a Function Draft Pick", 
+                  theme = theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold", margin = margin(b = 10))))
+
+# Adjust the legend position to the bottom for the combined plot
+combined_plot <- combined_plot & theme(legend.position = "bottom")
+
+# Display the combined plot
+combined_plot
+```
+
+```{r}
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6, size = 1.2) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(x = "Overall Draft Pick", y = "Total NHL Games Played") +
+  theme(legend.position = "none")
+
+# Define plot2 with a legend and specify the size of the dots in the legend
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0"),
+                     labels = c("Draft Pick 1", "Draft Pick 2", "Draft Pick 3", "Draft Pick > 3")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, 6)) +
+  labs(x = "Overall Draft Pick", y = NULL) +
+  guides(color = guide_legend(title = "Overall Draft Pick",
+                              override.aes = list(size = 2.5)))  # Set the size of dots in the legend
+
+# Combine the plots side by side, ensuring only plot2's legend is used
+combined_plot <- plot1 + plot2
+
+# Add a single title for the whole figure and make the font bold
+combined_plot + plot_annotation(title = "Total NHL Games Played as a Function of Draft Pick", 
+                                theme = theme(plot.title = element_text(face = "bold")))
+```
+
+```{r}
+plot1 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_point(alpha = 0.6, size = 1.1) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0")) +
+  theme_minimal() +
+  labs(x = "Draft Round", y = "Total NHL Games Played") +
+  theme(legend.position = "none")
+
+# Define plot2 with a legend and specify the size of the dots in the legend
+plot2 <- ggplot(hockey.total, aes(x = overall, y = totgames, color = overall_color)) +
+  geom_jitter(alpha = 0.6, size = 2.5, width = 0.2, height = 0) +
+  scale_color_manual(values = c("#191970", "#5B92E5", "#95C8D8", "#C4C3D0"),
+                     labels = c("R1", "R2", "R3", "R > 3")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, 6)) +
+  labs(x = "Draft Round", y = NULL) +
+  guides(color = guide_legend(title = "Draft Round:",
+                              override.aes = list(size = 2.5)))  # Set the size of dots in the legend
+
+# Combine the plots side by side, ensuring only plot2's legend is used
+combined_plot <- plot1 + plot2
+
+# Add a single title for the whole figure and make the font bold
+# And, shrink the size of the legend
+combined_plot_final = combined_plot + 
+  plot_annotation(title = "Total NHL Games Played as a Function of Draft Round", 
+                  theme = theme(plot.title = element_text(face = "bold"))) +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 8), # Smaller text in the legend
+        legend.title = element_text(size = 9), # Smaller title in the legend
+        legend.key.size = unit(0.5, "cm")) # Smaller keys in the legend
+
+# Display the combined plot with the adjusted legend
+combined_plot_final
+```
